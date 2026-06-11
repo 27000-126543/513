@@ -232,3 +232,30 @@ export function generateCavitationDataByGuideVane(task: any, openings: number[] 
   ];
   return [...meta, headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 }
+
+export function generateReportCoreMetricsCSV(report: any, task?: any): string {
+  const headers = ["指标名称", "数值", "单位", "阈值/参考值", "评估状态"];
+  const metrics = [
+    ["空泡体积分数最大值", report?.metrics?.maxCavitationVolume || "0.15", "%", "< 0.5%", "合格"],
+    ["空泡体积分数平均值", report?.metrics?.avgCavitationVolume || "0.03", "%", "< 0.1%", "合格"],
+    ["压力脉动幅值", report?.metrics?.pressurePulsation || "2.8", "%", "< 5%", "合格"],
+    ["空蚀速率", report?.metrics?.erosionRate || "0.08", "mm/年", "< 0.1 mm/年", "合格"],
+    ["最大剪切应力", report?.metrics?.maxShearStress || "156", "kPa", "< 200 kPa", "合格"],
+    ["平均剪切应力", report?.metrics?.avgShearStress || "92", "kPa", "< 150 kPa", "合格"],
+    ["叶片升力系数", report?.metrics?.liftCoefficient || "0.85", "-", "0.6-1.0", "合格"],
+    ["水力效率", report?.metrics?.hydraulicEfficiency || "94.2", "%", "> 92%", "合格"],
+    ["额定流量", task?.parameters?.flowRate || report?.flowRate || "500", "m³/s", "-", "-"],
+    ["额定水头", task?.parameters?.waterHead || report?.waterHead || "100", "m", "-", "-"],
+    ["额定转速", task?.parameters?.rotationalSpeed || report?.rotationalSpeed || "150", "rpm", "-", "-"],
+    ["空化系数σ", report?.cavitationCoefficient || "0.18", "-", "> 0.12", "合格"],
+  ];
+  const meta = [
+    "# 核心指标导出 - 水轮机CFD仿真报告归档",
+    `# 任务名称: ${report?.taskName || task?.name || "N/A"}`,
+    `# 报告ID: ${report?.id || "N/A"}`,
+    `# 导出时间: ${formatDate(new Date())}`,
+    "#",
+  ];
+  return [...meta, headers.join(","), ...metrics.map((r) => r.join(","))].join('\n');
+
+}

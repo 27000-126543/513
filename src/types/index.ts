@@ -120,6 +120,18 @@ export interface SimulationTask {
   adjustmentCount: number;
 }
 
+export type ReportRiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
+export interface ReportReviewRecord {
+  id: string;
+  reportId: string;
+  reviewer: string;
+  reviewedAt: Date;
+  conclusion: string;
+  riskLevel: ReportRiskLevel;
+  suggestion: string;
+}
+
 export interface Report {
   id: string;
   taskId: string;
@@ -134,6 +146,7 @@ export interface Report {
   };
   generatedAt: Date;
   fileSize: number;
+  reviewRecords?: ReportReviewRecord[];
 }
 
 export interface Approval {
@@ -188,4 +201,10 @@ export interface User {
   role: UserRole;
   avatar: string;
   department: string;
+}
+
+export interface PushedToManufacturingRecord {
+  taskId: string;
+  pushedBy: string;
+  pushedAt: Date;
 }

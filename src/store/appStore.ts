@@ -5,6 +5,8 @@ import {
   DashboardStatistics,
   TrendDataPoint,
   Report,
+  ReportReviewRecord,
+  ReportRiskLevel,
   Approval,
   Recommendation,
   MonitoringData,
@@ -59,6 +61,8 @@ interface AppState {
   rejectApproval: (approvalId: string, comment: string) => void;
 
   createTask: (task: Partial<SimulationTask>) => void;
+  addReportReview: (reportId: string, record: Omit<ReportReviewRecord, 'id' | 'reportId' | 'reviewer' | 'reviewedAt'> & { reviewer?: string; reviewedAt?: Date }) => void;
+  getReportReviews: (reportId: string) => ReportReviewRecord[];
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -379,4 +383,27 @@ export const useAppStore = create<AppState>((set, get) => ({
       },
     }));
   },
+
+  addReportReview: (reportId, record) =>
+    set((state) => {
+      const newRecord: ReportReviewRecord = {
+        id: generateId(),
+        reportId,
+        reviewer: record.reviewer || state.currentUser.name,
+        reviewedAt: record.reviewedAt || new Date(),
+        conclusion: record.conclusion,
+        riskLevel: record.riskLevel,
+        suggestion: record.suggestion,
+      };
+      return {
+        reports: state.reports.map((r) =>
+          r.id === reportId
+            ? { ...r, reviewRecords: [...(r.reviewRecords || []), newRecord] }
+            : r
+        ),
+      };
+    }),
+
+  getReportReviews: (reportId) =>
+    get().reports.find((r) => r.id === reportId)?.reviewRecords || [],
 }));

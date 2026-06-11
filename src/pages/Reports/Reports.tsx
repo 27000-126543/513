@@ -17,6 +17,11 @@ import {
   Activity,
   Gauge,
   Zap,
+  AlertTriangle,
+  ShieldCheck,
+  CheckCircle,
+  Plus,
+  Save,
 } from 'lucide-react';
 import { useAppStore } from '../../store/appStore';
 import {
@@ -29,15 +34,32 @@ import {
   generateCavitationDataByWaterHead,
   generateCavitationDataBySpeed,
   generateCavitationDataByGuideVane,
+  generateReportCoreMetricsCSV,
 } from '../../utils/formatters';
 
 export function Reports() {
-  const { reports, tasks } = useAppStore();
+  const { reports, tasks, addReportReview } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cavitation' | 'pressure' | 'stress'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'cavitation' | 'pressure' | 'stress' | 'review'>(
     'overview'
   );
+
+  const [reviewConclusion, setReviewConclusion] = useState('');
+  const [reviewRisk, setReviewRisk] = useState<'low' | 'medium' | 'high' | 'critical'>('low');
+  const [reviewSuggestion, setReviewSuggestion] = useState('');
+
+  const handleAddReview = () => {
+    if (!selected || !reviewConclusion.trim() || !reviewSuggestion.trim()) return;
+    addReportReview(selected.id, {
+      conclusion: reviewConclusion,
+      riskLevel: reviewRisk,
+      suggestion: reviewSuggestion,
+    });
+    setReviewConclusion('');
+    setReviewSuggestion('');
+    setReviewRisk('low');
+  };
 
   const filteredReports = reports.filter(
     (r) =>
@@ -307,6 +329,7 @@ export function Reports() {
                 { id: 'cavitation', label: '空化分析' },
                 { id: 'pressure', label: '压力分布' },
                 { id: 'stress', label: '应力分析' },
+                { id: 'review', label: '复核记录' },
               ].map((tab) => (
                 <button
                   key={tab.id}
