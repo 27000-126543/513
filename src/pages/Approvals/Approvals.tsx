@@ -44,18 +44,23 @@ export function Approvals() {
   } | null>(null);
   const [reviewComment, setReviewComment] = useState('');
 
-const displayApprovals = activeTab ==='pending'
-  ? approvals.filter((a) => {
-      if (a.status !=='pending') return false;
-      if (a.level ==='level_2') {
-        const level1 = approvals.find(
-          (x) => x.taskId === a.taskId && x.level ==='level_1'
-        );
-        return level1?.status ==='approved';
-      }
-      return true;
-    })
-  : approvals;
+const displayApprovals = approvals.filter((a) => {
+  if (activeTab !== 'pending') {
+    const sameTaskApprovals = approvals.filter((x) => x.taskId === a.taskId);
+    if (sameTaskApprovals.some((x) => x.level === 'level_2')) {
+      return a.level === 'level_2';
+    }
+    return true;
+  }
+  if (a.status !== 'pending') return false;
+  if (a.level === 'level_2') {
+    const level1 = approvals.find(
+      (x) => x.taskId === a.taskId && x.level === 'level_1'
+    );
+    if (level1 && level1.status !== 'approved') return false;
+  }
+  return true;
+});
 
 const pendingCount = approvals.filter((a) => {
   if (a.status !=='pending') return false;
@@ -127,6 +132,19 @@ const pendingCount = approvals.filter((a) => {
             </div>
             <div className="p-3 rounded-xl bg-status-danger/10">
               <XCircle className="w-6 h-6 text-status-danger" />
+            </div>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-text-secondary text-sm">已推送制造</p>
+              <p className="text-2xl font-bold text-accent font-mono mt-1">
+                {pushedToManufacturing.length}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-accent/10">
+              <CheckSquare className="w-6 h-6 text-accent" />
             </div>
           </div>
         </div>

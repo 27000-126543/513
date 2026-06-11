@@ -140,7 +140,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       let newStatusLogs = state.statusLogs;
       let newAlerts = state.alerts;
 
-      if (status === 'resolved' && alert && task) {
+      if (status === 'resolved' && alert && task && (alert.type === 'thrust_fluctuation' || alert.type === 'vapor_pressure')) {
         const adjustmentType =
           alert.type === 'thrust_fluctuation' ? 'guideVaneOpening' : 'bladeAngle';
         const adjustmentDelta =
