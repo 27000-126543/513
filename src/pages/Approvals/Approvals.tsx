@@ -35,7 +35,7 @@ const levelLabels: Record<ApprovalLevel, string> = {
 };
 
 export function Approvals() {
-  const { approvals, approveApproval, rejectApproval } = useAppStore();
+  const { approvals, pushedToManufacturing, approveApproval, rejectApproval } = useAppStore();
   const [activeTab, setActiveTab] = useState<'pending' | 'history'>('pending');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [reviewModal, setReviewModal] = useState<{
@@ -44,11 +44,29 @@ export function Approvals() {
   } | null>(null);
   const [reviewComment, setReviewComment] = useState('');
 
-  const filteredApprovals = approvals.filter((a) =>
-    activeTab === 'pending' ? a.status === 'pending' : a.status !== 'pending'
-  );
+const displayApprovals = activeTab ==='pending'
+  ? approvals.filter((a) => {
+      if (a.status !=='pending') return false;
+      if (a.level ==='level_2') {
+        const level1 = approvals.find(
+          (x) => x.taskId === a.taskId && x.level ==='level_1'
+        );
+        return level1?.status ==='approved';
+      }
+      return true;
+    })
+  : approvals;
 
-  const pendingCount = approvals.filter((a) => a.status === 'pending').length;
+const pendingCount = approvals.filter((a) => {
+  if (a.status !=='pending') return false;
+  if (a.level ==='level_2') {
+    const level1 = approvals.find(
+      (x) => x.taskId === a.taskId && x.level ==='level_1'
+    );
+    return level1?.status ==='approved';
+  }
+  return true;
+}).length;
 
   const handleReview = () => {
     if (!reviewModal) return;
@@ -67,12 +85,12 @@ export function Approvals() {
         <div>
           <h1 className="text-2xl font-bold text-text-primary">审批中心</h1>
           <p className="text-text-secondary text-sm mt-1">
-            两级审批流程：流体工程师验证 → 项目总工程师确认
+            两级审批流程：流体工程师验证 → 项目总工程师确认 → 推送制造组
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <div className="stat-card">
           <div className="flex items-center justify-between">
             <div>
@@ -147,7 +165,17 @@ export function Approvals() {
       </div>
 
       <div className="space-y-4">
-        {filteredApprovals.map((approval, index) => {
+        {displayApprovals.map((approval, index) => {
+          const taskLevel1 = approvals.find(
+            (a) => a.taskId === approval.taskId && a.level ==="level_1"
+          );
+          const taskLevel2 = approvals.find(
+            (a) => a.taskId === approval.taskId && a.level ==="level_2"
+          );
+          const level1Status = taskLevel1?.status || "pending";
+          const level2Status = taskLevel2?.status || "pending";
+          const isPushed = pushedToManufacturing.includes(approval.taskId);
+
           const isExpanded = expandedId === approval.id;
 
           return (
@@ -157,16 +185,25 @@ export function Approvals() {
               style={{ animationDelay: `${index * 0.05}s` }}
             >
               <div
-                className="p-5 cursor-pointer"
+                className="p-5 cursor-pointer relative"
                 onClick={() => setExpandedId(isExpanded ? null : approval.id)}
               >
                 <div className="flex items-center justify-between">
+                {isPushed && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <span className="badge badge-success flex items-center gap-1 shadow-sm">
+                      <CheckCircle className="w-3 h-3" />
+                      已推送至制造工艺组
+                    </span>
+                  </div>
+                )}
+
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
                       <FileText className="w-6 h-6 text-accent" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-text-primary">
+                      <h3 className="font-semibold text-text-primary pr-44">
                         {approval.taskName}
                       </h3>
                       <div className="flex items-center gap-3 mt-1 text-sm">
@@ -205,7 +242,7 @@ export function Approvals() {
                           className="btn-success text-sm flex items-center gap-2"
                         >
                           <ThumbsUp className="w-4 h-4" />
-                          通过
+                          {approval.level ==="level_1" ? "验证通过" : "确认通过"}
                         </button>
                       </div>
                     )}
@@ -228,127 +265,322 @@ export function Approvals() {
                           </h4>
                           <div className="flex items-center">
                             <div className="flex flex-col items-center">
-                              <div className="w-8 h-8 rounded-full bg-status-success/20 flex items-center justify-center">
-                                <CheckCircle className="w-4 h-4 text-status-success" />
+                              <div className="w-10 h-10 rounded-full bg-success/15 flex items-center justify-center border-2 border-success">
+                                <CheckCircle className="w-5 h-5 text-success" />
                               </div>
-                              <span className="text-xs text-text-secondary mt-1">提交</span>
+                              <span className="text-xs font-medium text-text-primary mt-2 whitespace-nowrap">提交</span>
                             </div>
-                            <div className="flex-1 h-0.5 bg-border mx-2" />
+                            <div className={
+                              (level1Status === "approved" || level1Status === "rejected")
+                                ? "flex-1 h-1 mx-2 bg-success"
+                                : "flex-1 h-1 mx-2 bg-border"
+                            } />
                             <div className="flex flex-col items-center">
-                              <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                  approval.level === 'level_1' || approval.status === 'approved'
-                                    ? 'bg-accent/20'
-                                    : 'bg-bg-tertiary'
-                                }`}
-                              >
-                                {approval.status === 'approved' ? (
-                                  <CheckCircle className="w-4 h-4 text-status-success" />
-                                ) : approval.status === 'rejected' && approval.level === 'level_1' ? (
-                                  <XCircle className="w-4 h-4 text-status-danger" />
+                              <div className={
+                                "w-10 h-10 rounded-full flex items-center justify-center border-2 " + (
+                                  level1Status === "approved"
+                                    ? "bg-success/15 border-success"
+                                    : level1Status === "rejected"
+                                    ? "bg-error/15 border-error"
+                                    : approval.level === "level_1"
+                                    ? "bg-accent/15 border-accent ring-4 ring-accent/15 animate-pulse"
+                                    : "bg-surface border-border"
+                                )
+                              }>
+                                {level1Status === "approved" ? (
+                                  <CheckCircle className="w-5 h-5 text-success" />
+                                ) : level1Status === "rejected" ? (
+                                  <XCircle className="w-5 h-5 text-error" />
                                 ) : (
-                                  <User
-                                    className={`w-4 h-4 ${
-                                      approval.level === 'level_1'
-                                        ? 'text-accent'
-                                        : 'text-text-muted'
-                                    }`}
-                                  />
+                                  <User className={
+                                    "w-5 h-5 " + (
+                                      approval.level === "level_1"
+                                        ? "text-accent"
+                                        : "text-text-muted"
+                                    )
+                                  } />
                                 )}
                               </div>
-                              <span className="text-xs text-text-secondary mt-1">
-                                流体工程师
+                              <span className={
+                                "text-xs font-medium mt-2 whitespace-nowrap " + (
+                                  approval.level === "level_1" && approval.status === "pending"
+                                    ? "text-accent"
+                                    : "text-text-primary"
+                                )
+                              }>流体工程师</span>
+                              <span className={
+                                "text-[10px] mt-0.5 whitespace-nowrap " + (
+                                  level1Status === "pending"
+                                    ? "text-text-muted"
+                                    : level1Status === "approved"
+                                    ? "text-success"
+                                    : "text-error"
+                                )
+                              }>
+                                {level1Status === "pending"
+                                  ? "待验证"
+                                  : level1Status === "approved"
+                                  ? "已验证"
+                                  : "已驳回"}
                               </span>
                             </div>
-                            <div className="flex-1 h-0.5 bg-border mx-2" />
+                            <div className={
+                              (level2Status === "approved" || level2Status === "rejected")
+                                ? "flex-1 h-1 mx-2 bg-success"
+                                : level1Status === "approved"
+                                ? "flex-1 h-1 mx-2 bg-accent/40"
+                                : "flex-1 h-1 mx-2 bg-border"
+                            } />
                             <div className="flex flex-col items-center">
-                              <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                  approval.level === 'level_2' && approval.status === 'pending'
-                                    ? 'bg-status-warning/20'
-                                    : approval.status === 'approved'
-                                    ? 'bg-status-success/20'
-                                    : 'bg-bg-tertiary'
-                                }`}
-                              >
-                                {approval.status === 'approved' ? (
-                                  <CheckCircle className="w-4 h-4 text-status-success" />
+                              <div className={
+                                "w-10 h-10 rounded-full flex items-center justify-center border-2 " + (
+                                  level2Status === "approved"
+                                    ? "bg-success/15 border-success"
+                                    : level2Status === "rejected"
+                                    ? "bg-error/15 border-error"
+                                    : (level1Status === "approved" && approval.level === "level_2")
+                                    ? "bg-accent/15 border-accent ring-4 ring-accent/15 animate-pulse"
+                                    : level1Status === "approved"
+                                    ? "bg-surface border-accent/40"
+                                    : "bg-surface border-border"
+                                )
+                              }>
+                                {level2Status === "approved" ? (
+                                  <CheckCircle className="w-5 h-5 text-success" />
+                                ) : level2Status === "rejected" ? (
+                                  <XCircle className="w-5 h-5 text-error" />
                                 ) : (
-                                  <User
-                                    className={`w-4 h-4 ${
-                                      approval.level === 'level_2'
-                                        ? 'text-status-warning'
-                                        : 'text-text-muted'
-                                    }`}
-                                  />
+                                  <User className={
+                                    "w-5 h-5 " + (
+                                      level1Status === "approved"
+                                        ? approval.level === "level_2"
+                                          ? "text-accent"
+                                          : "text-text-secondary"
+                                        : "text-text-muted"
+                                    )
+                                  } />
                                 )}
                               </div>
-                              <span className="text-xs text-text-secondary mt-1">总工程师</span>
+                              <span className={
+                                "text-xs font-medium mt-2 whitespace-nowrap " + (
+                                  level1Status === "approved" && approval.level === "level_2" && approval.status === "pending"
+                                    ? "text-accent"
+                                    : "text-text-primary"
+                                )
+                              }>总工程师</span>
+                              <span className={
+                                "text-[10px] mt-0.5 whitespace-nowrap " + (
+                                  level1Status !== "approved"
+                                    ? "待解锁"
+                                    : level2Status === "pending"
+                                    ? "待确认"
+                                    : level2Status === "approved"
+                                    ? "已确认"
+                                    : "已驳回"
+                                )
+                              }>
+                                {level1Status !== "approved"
+                                  ? "待解锁"
+                                  : level2Status === "pending"
+                                  ? "待确认"
+                                  : level2Status === "approved"
+                                  ? "已确认"
+                                  : "已驳回"}
+                              </span>
                             </div>
-                            <div className="flex-1 h-0.5 bg-border mx-2" />
+                            <div className={
+                              isPushed
+                                ? "flex-1 h-1 mx-2 bg-success"
+                                : level2Status === "approved"
+                                ? "flex-1 h-1 mx-2 bg-accent/40"
+                                : "flex-1 h-1 mx-2 bg-border"
+                            } />
                             <div className="flex flex-col items-center">
-                              <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                  approval.status === 'approved'
-                                    ? 'bg-status-success/20'
-                                    : 'bg-bg-tertiary'
-                                }`}
-                              >
-                                <CheckSquare
-                                  className={`w-4 h-4 ${
-                                    approval.status === 'approved'
-                                      ? 'text-status-success'
-                                      : 'text-text-muted'
-                                  }`}
-                                />
+                              <div className={
+                                "w-10 h-10 rounded-full flex items-center justify-center border-2 " + (
+                                  isPushed
+                                    ? "bg-success/15 border-success"
+                                    : level2Status === "approved"
+                                    ? "bg-surface border-accent/40"
+                                    : "bg-surface border-border"
+                                )
+                              }>
+                                {isPushed ? (
+                                  <CheckCircle className="w-5 h-5 text-success" />
+                                ) : (
+                                  <FileText className={
+                                    "w-5 h-5 " + (
+                                      level2Status === "approved"
+                                        ? "text-accent"
+                                        : "text-text-muted"
+                                    )
+                                  } />
+                                )}
                               </div>
-                              <span className="text-xs text-text-secondary mt-1">完成</span>
+                              <span className={
+                                "text-xs font-medium mt-2 whitespace-nowrap " + (
+                                  isPushed ? "text-success" : "text-text-primary"
+                                )
+                              }>制造工艺组</span>
+                              <span className={
+                                "text-[10px] mt-0.5 whitespace-nowrap " + (
+                                  isPushed
+                                    ? "text-success"
+                                    : level2Status === "approved"
+                                    ? "text-accent"
+                                    : "text-text-muted"
+                                )
+                              }>
+                                {isPushed ? "已推送" : level2Status === "approved" ? "待推送" : "待解锁"}
+                              </span>
                             </div>
                           </div>
-                        </div>
-
-                        {approval.comment && (
-                          <div className="p-4 bg-bg-tertiary/50 rounded-lg">
-                            <div className="flex items-center gap-2 mb-2">
-                              <MessageSquare className="w-4 h-4 text-accent" />
-                              <span className="text-sm font-medium text-text-primary">
-                                审批意见
-                              </span>
-                            </div>
-                            <p className="text-sm text-text-secondary pl-6">
-                              "{approval.comment}"
-                            </p>
-                            {approval.approver && (
-                              <p className="text-xs text-text-muted mt-2 pl-6">
-                                — {approval.approver} 于{' '}
-                                {approval.approvedAt
-                                  ? formatDate(approval.approvedAt)
-                                  : '-'}
+                          {isPushed && (
+                            <div className="mt-4 p-3 bg-success/10 border border-success/20 rounded-lg flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 text-success flex-shrink-0" />
+                              <p className="text-xs text-success font-medium">
+                                全部审批已通过，任务已推送至制造工艺组进行生产准备
                               </p>
+                            </div>
+                          )}
+                          {!isPushed && (level1Status === "rejected" || level2Status === "rejected") && (
+                            <div className="mt-4 p-3 bg-error/10 border border-error/20 rounded-lg flex items-center gap-2">
+                              <XCircle className="w-4 h-4 text-error flex-shrink-0" />
+                              <p className="text-xs text-error font-medium">
+                                审批流程已驳回，如需继续请重新提交审批
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-text-primary mb-3 flex items-center gap-2">
+                            <MessageSquare className="w-4 h-4 text-accent" />
+                            审批意见
+                          </h4>
+                          <div className="space-y-3">
+                            {taskLevel1?.comment && (
+                              <div className="p-4 bg-surface rounded-lg border border-border">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium px-2 py-0.5 bg-accent/10 text-accent rounded">
+                                      流体工程师（一级）
+                                    </span>
+                                    {taskLevel1?.approver && (
+                                      <span className="text-xs text-text-secondary">
+                                        {taskLevel1.approver}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {taskLevel1?.approvedAt && (
+                                    <span className="text-xs text-text-muted">
+                                      {formatDate(taskLevel1.approvedAt)}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-text-primary italic">
+                                  "{taskLevel1.comment}"
+                                </p>
+                              </div>
+                            )}
+                            {taskLevel2?.comment && (
+                              <div className="p-4 bg-surface rounded-lg border border-border">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium px-2 py-0.5 bg-accent/10 text-accent rounded">
+                                      总工程师（二级）
+                                    </span>
+                                    {taskLevel2?.approver && (
+                                      <span className="text-xs text-text-secondary">
+                                        {taskLevel2.approver}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {taskLevel2?.approvedAt && (
+                                    <span className="text-xs text-text-muted">
+                                      {formatDate(taskLevel2.approvedAt)}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-text-primary italic">
+                                  "{taskLevel2.comment}"
+                                </p>
+                              </div>
+                            )}
+                            {!taskLevel1?.comment && !taskLevel2?.comment && (
+                              <div className="p-4 bg-surface rounded-lg border border-border text-center">
+                                <p className="text-sm text-text-muted">暂无审批意见</p>
+                              </div>
                             )}
                           </div>
-                        )}
+                        </div>
                       </div>
-
                       <div className="space-y-3">
-                        <div className="p-3 bg-bg-tertiary/30 rounded-lg">
+                        <div className="p-4 bg-surface rounded-lg border border-border">
                           <p className="text-xs text-text-muted mb-1">提交时间</p>
-                          <p className="text-sm text-text-primary">
+                          <p className="text-sm font-medium text-text-primary">
                             {formatDate(approval.submittedAt)}
                           </p>
-                        </div>
-                        <div className="p-3 bg-bg-tertiary/30 rounded-lg">
-                          <p className="text-xs text-text-muted mb-1">审批级别</p>
-                          <p className="text-sm text-text-primary">
-                            {levelLabels[approval.level]}
+                          <p className="text-xs text-text-muted mt-1">
+                            {formatRelativeTime(approval.submittedAt)}
                           </p>
                         </div>
-                        <div className="p-3 bg-bg-tertiary/30 rounded-lg">
-                          <p className="text-xs text-text-muted mb-1">审批人</p>
-                          <p className="text-sm text-text-primary">
-                            {approval.approver || '待审批'}
+                        <div className="p-4 bg-surface rounded-lg border border-border">
+                          <p className="text-xs text-text-muted mb-1">当前审批</p>
+                          <p className={
+                            "text-sm font-semibold " + (
+                              approval.status === "pending"
+                                ? "text-accent"
+                                : approval.status === "approved"
+                                ? "text-success"
+                                : "text-error"
+                            )
+                          }>
+                            {approval.level === "level_1"
+                              ? "流体工程师验证"
+                              : "总工程师确认"}
+                          </p>
+                          <p className="text-xs text-text-muted mt-1">
+                            {approval.status === "pending"
+                              ? approval.level === "level_1"
+                                ? "等待流体工程师验证通过"
+                                : "等待总工程师最终确认"
+                              : approval.status === "approved"
+                              ? approval.level === "level_1"
+                                ? "流体工程师已验证通过"
+                                : "总工程师已确认通过"
+                              : approval.level === "level_1"
+                              ? "流体工程师已驳回"
+                              : "总工程师已驳回"}
                           </p>
                         </div>
+                        <div className="p-4 bg-surface rounded-lg border border-border">
+                          <p className="text-xs text-text-muted mb-1">当前审批人</p>
+                          <p className="text-sm font-medium text-text-primary">
+                            {approval.approver || "待审批"}
+                          </p>
+                        </div>
+                        {taskLevel1?.approvedAt && (
+                          <div className="p-4 bg-success/5 rounded-lg border border-success/20">
+                            <p className="text-xs text-success/80 mb-1">一级通过时间</p>
+                            <p className="text-sm font-medium text-success">
+                              {formatDate(taskLevel1.approvedAt)}
+                            </p>
+                            <p className="text-xs text-success/70 mt-1">
+                              {formatRelativeTime(taskLevel1.approvedAt)}
+                            </p>
+                          </div>
+                        )}
+                        {taskLevel2?.approvedAt && (
+                          <div className="p-4 bg-success/5 rounded-lg border border-success/20">
+                            <p className="text-xs text-success/80 mb-1">二级通过时间</p>
+                            <p className="text-sm font-medium text-success">
+                              {formatDate(taskLevel2.approvedAt)}
+                            </p>
+                            <p className="text-xs text-success/70 mt-1">
+                              {formatRelativeTime(taskLevel2.approvedAt)}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -359,7 +591,7 @@ export function Approvals() {
         })}
       </div>
 
-      {filteredApprovals.length === 0 && (
+      {displayApprovals.length === 0 && (
         <div className="card p-12 text-center">
           <CheckSquare className="w-16 h-16 text-text-muted mx-auto mb-4 opacity-50" />
           <h3 className="text-lg font-semibold text-text-primary mb-2">
@@ -374,36 +606,71 @@ export function Approvals() {
       )}
 
       {reviewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="card p-6 w-full max-w-md animate-fade-in">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">
-              {reviewModal.action === 'approve' ? '审批通过' : '审批驳回'}
-            </h3>
-            <div className="mb-4">
-              <label className="label">审批意见</label>
-              <textarea
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                className="input h-24 resize-none"
-                placeholder="请输入审批意见..."
-              />
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-0" onClick={() => setReviewModal(null)}>
+          <div
+            className="w-full max-w-2xl bg-surface rounded-t-2xl shadow-2xl animate-slide-up max-h-[80vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-12 h-1 bg-text-muted/30 rounded-full" />
             </div>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setReviewModal(null);
-                  setReviewComment('');
-                }}
-                className="btn-secondary"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleReview}
-                className={reviewModal.action === 'approve' ? 'btn-success' : 'btn-danger'}
-              >
-                确认{reviewModal.action === 'approve' ? '通过' : '驳回'}
-              </button>
+            <div className="p-6 pt-2 overflow-y-auto max-h-[calc(80vh-3rem)]">
+              <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+                {reviewModal.action === 'approve' ? (
+                  <>
+                    <ThumbsUp className="w-5 h-5 text-success" />
+                    {(() => {
+                      const a = approvals.find(ap => ap.id === reviewModal.approvalId);
+                      return a?.level === 'level_1' ? '验证通过确认' : '确认通过审批';
+                    })()}
+                  </>
+                ) : (
+                  <>
+                    <ThumbsDown className="w-5 h-5 text-error" />
+                    驳回审批
+                  </>
+                )}
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="label">
+                    {reviewModal.action === 'approve' ? '审批意见' : '驳回原因'}
+                  </label>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    className="input min-h-[100px] resize-y"
+                    placeholder={reviewModal.action === 'approve' ? '请输入审批意见（可选）...' : '请输入驳回原因（必填）...'}
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setReviewModal(null)}
+                    className="btn-secondary flex-1"
+                  >
+                    取消
+                  </button>
+                  <button
+                    onClick={() => {
+                      const action = reviewModal.action;
+                      const id = reviewModal.approvalId;
+                      if (action === 'approve') {
+                        approveApproval(id, reviewComment);
+                      } else {
+                        rejectApproval(id, reviewComment);
+                      }
+                      setReviewModal(null);
+                      setReviewComment('');
+                    }}
+                    className={reviewModal.action === 'approve' ? 'btn-success flex-1 font-medium' : 'btn-error flex-1 font-medium'}
+                  >
+                    {reviewModal.action === 'approve' ? (() => {
+                      const a = approvals.find(ap => ap.id === reviewModal.approvalId);
+                      return a?.level === 'level_1' ? '确认验证通过' : '确认审批通过';
+                    })() : '确认驳回'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

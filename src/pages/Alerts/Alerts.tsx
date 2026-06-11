@@ -51,7 +51,7 @@ const statusFilters: { value: AlertStatus | 'all'; label: string }[] = [
 ];
 
 export function Alerts() {
-  const { alerts, reviewAlert } = useAppStore();
+  const { alerts, tasks, reviewAlert } = useAppStore();
   const [statusFilter, setStatusFilter] = useState<AlertStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -356,38 +356,104 @@ export function Alerts() {
         </div>
       )}
 
-      {reviewModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="card p-6 w-full max-w-md animate-fade-in">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">
-              {reviewModal.action === 'resolve' ? '标记为已解决' : '忽略预警'}
-            </h3>
-            <div className="mb-4">
-              <label className="label">复核意见</label>
-              <textarea
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                className="input h-24 resize-none"
-                placeholder="请输入复核意见..."
-              />
-            </div>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setReviewModal(null);
-                  setReviewComment('');
-                }}
-                className="btn-secondary"
-              >
-                取消
-              </button>
-              <button onClick={handleReview} className="btn-primary">
-                确认
-              </button>
+      {reviewModal && (() => {
+        const alert = alerts.find((a) => a.id === reviewModal.alertId);
+        const task = alert ? tasks.find((t) => t.id === alert.taskId) : undefined;
+        const isResolve = reviewModal.action === 'resolve';
+        const isAutoAdjust =
+          isResolve && alert && (alert.type === 'thrust_fluctuation' || alert.type === 'vapor_pressure');
+        const adjustmentType =
+          alert?.type === 'thrust_fluctuation' ? 'guideVaneOpening' : 'bladeAngle';
+        const adjustmentDelta = alert
+          ? alert.type === 'thrust_fluctuation'
+            ? alert.value > alert.threshold * 1.3
+              ? -5
+              : -2
+            : alert.type === 'vapor_pressure'
+            ? alert.value < alert.threshold
+              ? 1.5
+              : 0.8
+            : 0
+          : 0;
+        const key = adjustmentType as 'guideVaneOpening' | 'bladeAngle';
+        const beforeVal = task?.parameters?.[key];
+        const afterVal = beforeVal !== undefined ? parseFloat((beforeVal + adjustmentDelta).toFixed(2)) : undefined;
+        return (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="card p-6 w-full max-w-md animate-fade-in">
+              <h3 className="text-lg font-semibold text-text-primary mb-4">
+                {reviewModal.action === 'resolve' ? '复核通过并优化' : '忽略预警'}
+              </h3>
+              {isAutoAdjust && task && (
+                <div className="mb-4 p-4 bg-accent/5 border border-accent/20 rounded-lg">
+                  <h4 className="font-medium text-accent text-sm mb-3 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    系统自动优化方案
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">调整参数</span>
+                      <span className="text-text-primary font-medium">
+                        {key === 'guideVaneOpening' ? '导叶开度' : '叶片安放角'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">当前值</span>
+                      <span className="font-mono text-status-warning">
+                        {beforeVal}{key === 'guideVaneOpening' ? '%' : '°'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-text-muted">调整后</span>
+                      <span className="font-mono text-status-success">
+                        {afterVal}{key === 'guideVaneOpening' ? '%' : '°'}
+                        {' '}({adjustmentDelta > 0 ? '+' : ''}{adjustmentDelta}{key === 'guideVaneOpening' ? '%' : '°'})
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border/60">
+                      <span className="text-text-muted">任务状态</span>
+                      <span className="text-text-primary">
+                        重置为<span className="badge badge-warning ml-2">待校验</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="mb-4">
+                <label className="label">复核意见 {!isAutoAdjust && <span className="text-text-muted">(可选)</span>}</label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  className="input h-24 resize-none"
+                  placeholder={
+                    isAutoAdjust
+                      ? '请输入复核意见，将自动记录到调整日志...'
+                      : '请输入忽略该预警的原因...'
+                  }
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setReviewModal(null);
+                    setReviewComment('');
+                  }}
+                  className="btn-secondary"
+                >
+                  取消
+                </button>
+                <button onClick={handleReview} className="btn-primary">
+                  {reviewModal.action === 'resolve'
+                    ? isAutoAdjust
+                      ? '确认调整并重新模拟'
+                      : '确认解决'
+                    : '确认忽略'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

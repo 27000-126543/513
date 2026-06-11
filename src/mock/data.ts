@@ -454,12 +454,15 @@ export const mockApprovals: Approval[] = [
     approvedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2),
   },
   {
-    id: 'approval-003',
-    taskId: 'task-005',
-    taskName: '龙滩HL-320涂层方案验证',
+    id: 'approval-004',
+    taskId: 'task-002',
+    taskName: '溪洛渡HL-360高负荷优化',
     level: 'level_2',
-    status: 'pending',
-    submittedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 0.5),
+    approver: '李首席科学家',
+    status: 'approved',
+    comment: '两级审批通过，优化方案完整，推送至叶片制造工艺组',
+    submittedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 5),
+    approvedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 4),
   },
 ];
 

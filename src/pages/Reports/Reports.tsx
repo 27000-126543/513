@@ -46,6 +46,7 @@ export function Reports() {
   );
 
   const selected = reports.find((r) => r.id === selectedReport) || reports[0];
+  const selectedTask = selected ? tasks.find((t) => t.id === selected.taskId) : undefined;
 
   const pressureChartOption = {
     backgroundColor: 'transparent',
@@ -222,21 +223,48 @@ export function Reports() {
           <div className="card p-4">
             <h3 className="font-medium text-text-primary mb-3">数据导出</h3>
             <div className="space-y-2">
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border hover:border-accent/30 transition-all text-left">
+              <button
+                onClick={() => {
+                  if (selected) {
+                    exportToCSV(
+                      generateCavitationDataByWaterHead(selectedTask || selected),
+                      `${selected.taskName}_按水头空化数据_${formatDate(new Date()).replace(/[: ]/g, '-')}.csv`
+                    );
+                  }
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border hover:border-accent/30 transition-all text-left">
                 <DownloadCloud className="w-5 h-5 text-accent" />
                 <div>
                   <p className="text-sm font-medium text-text-primary">按水头导出</p>
                   <p className="text-xs text-text-muted">全水头范围空化数据</p>
                 </div>
               </button>
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border hover:border-accent/30 transition-all text-left">
+              <button
+                onClick={() => {
+                  if (selected) {
+                    exportToCSV(
+                      generateCavitationDataBySpeed(selectedTask || selected),
+                      `${selected.taskName}_按转速叶片载荷_${formatDate(new Date()).replace(/[: ]/g, '-')}.csv`
+                    );
+                  }
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border hover:border-accent/30 transition-all text-left">
                 <DownloadCloud className="w-5 h-5 text-accent" />
                 <div>
                   <p className="text-sm font-medium text-text-primary">按转速导出</p>
                   <p className="text-xs text-text-muted">不同转速下叶片载荷</p>
                 </div>
               </button>
-              <button className="w-full flex items-center gap-3 p-3 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border hover:border-accent/30 transition-all text-left">
+              <button
+                onClick={() => {
+                  if (selected) {
+                    exportToCSV(
+                      generateCavitationDataByGuideVane(selectedTask || selected),
+                      `${selected.taskName}_按导叶开度性能_${formatDate(new Date()).replace(/[: ]/g, '-')}.csv`
+                    );
+                  }
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border hover:border-accent/30 transition-all text-left">
                 <DownloadCloud className="w-5 h-5 text-accent" />
                 <div>
                   <p className="text-sm font-medium text-text-primary">按导叶开度导出</p>
@@ -260,9 +288,15 @@ export function Reports() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="btn-secondary text-sm flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (selected) {
+                      exportReportPDF(selected, selectedTask);
+                    }
+                  }}
+                  className="btn-secondary text-sm flex items-center gap-2">
                   <Download className="w-4 h-4" />
-                  下载PDF
+                  下载报告
                 </button>
               </div>
             </div>
