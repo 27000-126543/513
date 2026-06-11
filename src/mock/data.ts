@@ -415,26 +415,6 @@ export const mockReports: Report[] = [
     },
     generatedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2),
     fileSize: 15.6 * 1024 * 1024,
-    reviewRecords: [
-      {
-        id: 'rr-001',
-        reportId: 'report-001',
-        reviewer: '陈流体工程师',
-        reviewedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 1.5),
-        conclusion: '空化性能达标，效率94.2%处于预期范围，空泡体积8.5%可控',
-        riskLevel: 'low' as const,
-        suggestion: '建议采用PU-850聚氨酯涂层进一步延长叶片寿命，可直接进入审批',
-      },
-      {
-        id: 'rr-002',
-        reportId: 'report-001',
-        reviewer: '王总工程师',
-        reviewedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 1),
-        conclusion: '复核确认通过，优化方案合理，空蚀风险低',
-        riskLevel: 'low' as const,
-        suggestion: '批准进入制造流程，需跟踪首批工件的空蚀监测数据',
-      },
-    ],
   },
   {
     id: 'report-002',
@@ -450,17 +430,6 @@ export const mockReports: Report[] = [
     },
     generatedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 1),
     fileSize: 18.2 * 1024 * 1024,
-    reviewRecords: [
-      {
-        id: 'rr-003',
-        reportId: 'report-002',
-        reviewer: '李流体工程师',
-        reviewedAt: new Date(now.getTime() - 1000 * 60 * 60 * 12),
-        conclusion: '涂层方案验证通过，空蚀速率0.15mm/年优于限值',
-        riskLevel: 'medium' as const,
-        suggestion: '建议在出水边局部增加涂层厚度，重点关注高应力区域',
-      },
-    ],
   },
 ];
 
@@ -474,17 +443,6 @@ export const mockApprovals: Approval[] = [
     submittedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24),
   },
   {
-    id: 'approval-003',
-    taskId: 'task-003',
-    taskName: '小湾HL-280叶片翼型优化',
-    level: 'level_1',
-    approver: '陈流体工程师',
-    status: 'approved',
-    comment: '空化流场计算结果合理，空泡体积控制在8.5%以内，推力波动稳定，验证通过',
-    submittedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 4),
-    approvedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 3.5),
-  },
-  {
     id: 'approval-002',
     taskId: 'task-003',
     taskName: '小湾HL-280叶片翼型优化',
@@ -494,17 +452,6 @@ export const mockApprovals: Approval[] = [
     comment: '优化方案合理，空蚀性能提升显著，同意实施',
     submittedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 3),
     approvedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2),
-  },
-  {
-    id: 'approval-005',
-    taskId: 'task-002',
-    taskName: '葛洲坝GZ-180空化流场分析',
-    level: 'level_1',
-    approver: '刘流体工程师',
-    status: 'approved',
-    comment: '贯流式水轮机全流道模拟收敛良好，网格质量达标，验证通过',
-    submittedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 6),
-    approvedAt: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 5.5),
   },
   {
     id: 'approval-004',

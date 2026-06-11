@@ -34,32 +34,15 @@ import {
   generateCavitationDataByWaterHead,
   generateCavitationDataBySpeed,
   generateCavitationDataByGuideVane,
-  generateReportCoreMetricsCSV,
 } from '../../utils/formatters';
 
 export function Reports() {
-  const { reports, tasks, addReportReview } = useAppStore();
+  const { reports, tasks } = useAppStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'cavitation' | 'pressure' | 'stress' | 'review'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'cavitation' | 'pressure' | 'stress'>(
     'overview'
   );
-
-  const [reviewConclusion, setReviewConclusion] = useState('');
-  const [reviewRisk, setReviewRisk] = useState<'low' | 'medium' | 'high' | 'critical'>('low');
-  const [reviewSuggestion, setReviewSuggestion] = useState('');
-
-  const handleAddReview = () => {
-    if (!selected || !reviewConclusion.trim() || !reviewSuggestion.trim()) return;
-    addReportReview(selected.id, {
-      conclusion: reviewConclusion,
-      riskLevel: reviewRisk,
-      suggestion: reviewSuggestion,
-    });
-    setReviewConclusion('');
-    setReviewSuggestion('');
-    setReviewRisk('low');
-  };
 
   const filteredReports = reports.filter(
     (r) =>
@@ -329,7 +312,6 @@ export function Reports() {
                 { id: 'cavitation', label: '空化分析' },
                 { id: 'pressure', label: '压力分布' },
                 { id: 'stress', label: '应力分析' },
-                { id: 'review', label: '复核记录' },
               ].map((tab) => (
                 <button
                   key={tab.id}

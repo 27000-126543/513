@@ -14,6 +14,7 @@ import {
   StatusLog,
   User,
   TaskStatus,
+  PushedToManufacturingRecord,
 } from '../types';
 import {
   mockTasks,
