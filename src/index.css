@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  color: #E8F1FF;
+  background-color: #0A1628;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #0A1628;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+@layer components {
+  .card {
+    @apply bg-bg-secondary border border-border rounded-xl shadow-card;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:border-accent/40 hover:shadow-glow;
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/50;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-bg-primary hover:bg-accent-light active:bg-accent-dark;
+  }
+
+  .btn-secondary {
+    @apply btn bg-bg-tertiary text-text-primary border border-border hover:bg-bg-elevated hover:border-accent/40;
+  }
+
+  .btn-danger {
+    @apply btn bg-status-danger/20 text-status-danger border border-status-danger/30 hover:bg-status-danger/30;
+  }
+
+  .btn-success {
+    @apply btn bg-status-success/20 text-status-success border border-status-success/30 hover:bg-status-success/30;
+  }
+
+  .badge {
+    @apply px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge bg-accent/20 text-accent border border-accent/30;
+  }
+
+  .badge-success {
+    @apply badge bg-status-success/20 text-status-success border border-status-success/30;
+  }
+
+  .badge-warning {
+    @apply badge bg-status-warning/20 text-status-warning border border-status-warning/30;
+  }
+
+  .badge-danger {
+    @apply badge bg-status-danger/20 text-status-danger border border-status-danger/30;
+  }
+
+  .badge-info {
+    @apply badge bg-status-info/20 text-status-info border border-status-info/30;
+  }
+
+  .badge-pending {
+    @apply badge bg-status-pending/20 text-status-pending border border-status-pending/30;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 bg-bg-tertiary border border-border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:border-accent/60 focus:ring-1 focus:ring-accent/30 transition-all;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-text-secondary mb-1.5;
+  }
+
+  .divider {
+    @apply h-px bg-border my-4;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #1E3A5F transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #1E3A5F;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #2A4A70;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-accent to-accent-light bg-clip-text text-transparent;
+  }
+
+  .glass-effect {
+    @apply backdrop-blur-md bg-bg-secondary/80 border border-border/50;
+  }
+
+  .stat-card {
+    @apply card p-5 relative overflow-hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    @apply absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent/50 to-transparent;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-stagger-1 { animation-delay: 0.05s; }
+.animate-stagger-2 { animation-delay: 0.1s; }
+.animate-stagger-3 { animation-delay: 0.15s; }
+.animate-stagger-4 { animation-delay: 0.2s; }
+.animate-stagger-5 { animation-delay: 0.25s; }
+.animate-stagger-6 { animation-delay: 0.3s; }
